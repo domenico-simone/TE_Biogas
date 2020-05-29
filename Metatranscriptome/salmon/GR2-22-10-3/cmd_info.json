@@ -1,0 +1,10 @@
+{
+    "salmon_version": "0.11.3",
+    "index": "/proj/biometa/data/Trace_Element_Study/Binning/Bins/Metratranscriptome_ffn/",
+    "threads": "12",
+    "libType": "A",
+    "mates1": "GR2-22-10-3_R1_trimmed.fastq.gz",
+    "mates2": "GR2-22-10-3_R2_trimmed.fastq.gz",
+    "output": "salmon/GR2-22-10-3",
+    "auxDir": "aux_info"
+}

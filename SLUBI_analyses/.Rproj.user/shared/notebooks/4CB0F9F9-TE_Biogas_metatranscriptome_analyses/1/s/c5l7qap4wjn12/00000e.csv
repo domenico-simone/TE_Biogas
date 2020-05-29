@@ -1,0 +1,10 @@
+"0","# Create DT view of table
+mat.all %>%
+  as.data.frame() %>%
+  mutate(Gene=rownames(.)) %>%
+  separate(col=Gene, c(""Bin"", NA), sep = ""_[01]"", remove = FALSE) %>%
+  select(Bin, Gene, starts_with(""G"")) %>%
+  datatable() %>% DT::saveWidget(""export/topVarGenes.html"")
+"
+"2","Error in setwd(dir) : cannot change working directory
+"

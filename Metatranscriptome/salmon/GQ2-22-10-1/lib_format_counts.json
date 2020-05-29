@@ -1,0 +1,25 @@
+{
+    "read_files": [
+        "GQ2-22-10-1_R1_trimmed.fastq.gz",
+        "GQ2-22-10-1_R2_trimmed.fastq.gz"
+    ],
+    "expected_format": "IU",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 26339034,
+    "num_assigned_fragments": 26339034,
+    "num_frags_with_concordant_consistent_mappings": 22311340,
+    "num_frags_with_inconsistent_or_orphan_mappings": 4028467,
+    "strand_mapping_bias": 0.5032327955201257,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 11083542,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 11227798,
+    "SF": 2203379,
+    "SR": 1825088,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}

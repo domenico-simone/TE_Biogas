@@ -1,0 +1,27 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1589790742819.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3182238714",
+    "id" : "D39F35BA",
+    "lastKnownWriteTime" : 1590428864,
+    "last_content_update" : 1590428864584,
+    "path" : "~/Dropbox/Research/slu/SLUBI_support/SLUBI_Project_TE_Biogas_snic2019-30-23/SLUBI_analyses/TE_Biogas_metatranscriptome_analyses.Rmd",
+    "project_path" : "TE_Biogas_metatranscriptome_analyses.Rmd",
+    "properties" : {
+        "cursorPosition" : "371,61",
+        "last_setup_crc32" : "BDD9A4F215344f99",
+        "scrollLine" : "354",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

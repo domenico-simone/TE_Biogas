@@ -1,0 +1,34 @@
+"0","# > mcols(res, use.names = TRUE)
+# DataFrame with 6 rows and 2 columns
+#                        type                                         description
+#                 <character>                                         <character>
+# baseMean       intermediate           mean of normalized counts for all samples
+# log2FoldChange      results log2 fold change (MLE): Condition treatment vs ctrl
+# lfcSE               results         standard error: Condition treatment vs ctrl
+# stat                results         Wald statistic: Condition treatment vs ctrl
+# pvalue              results      Wald test p-value: Condition treatment vs ctrl
+# padj                results                                BH adjusted p-values
+summary(res)
+"
+"1","
+"
+"1","out of 82452 with nonzero total read count
+"
+"1","adjusted p-value < 0.1
+"
+"1","LFC > 0 (up)       : 21171, 26%
+"
+"1","LFC < 0 (down)     : 9507, 12%
+"
+"1","outliers [1]       : 151, 0.18%
+"
+"1","low counts [2]     : 26585, 32%
+"
+"1","(mean count < 2)
+"
+"1","[1] see 'cooksCutoff' argument of ?results
+"
+"1","[2] see 'independentFiltering' argument of ?results
+"
+"1","
+"

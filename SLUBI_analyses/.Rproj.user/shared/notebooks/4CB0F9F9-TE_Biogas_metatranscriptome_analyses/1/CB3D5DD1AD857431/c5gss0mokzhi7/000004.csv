@@ -1,0 +1,6 @@
+"0","# Shrinkage of effect size (LFC estimates) is useful for visualization and ranking of genes. To shrink the LFC, we pass the dds object to the function lfcShrink. Below we specify to use the apeglm method for effect size shrinkage (Zhu, Ibrahim, and Love 2018), which improves on the previous estimator.
+resLFC <- lfcShrink(dds, coef=""Condition_treatment_vs_ctrl"", type=""apeglm"")
+"
+"2","Error in lfcShrink(dds, coef = ""Condition_treatment_vs_ctrl"", type = ""apeglm"") : 
+  type='apeglm' requires installing the Bioconductor package 'apeglm'
+"

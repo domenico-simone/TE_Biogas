@@ -1,0 +1,38 @@
+"0","p <- read_tsv(""Metatranscriptome/Merged_Quant.sf"") %>%  # read merged file from salmon (gene expr in TPM)"
+"0","  rename(Gene=Name) %>% # rename ""Name"" column into ""Gene"""
+"0","  separate(col=Gene, c(""Bin"", NA), sep = ""_[01]"", remove = TRUE) %>% # add column with bin name (from gene name)"
+"0","  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup() %>% # summarise counts at bin level"
+"0","  gather(""Sample"", ""Abundance"", 2:ncol(.)) %>% left_join(metadata) %>% # create data frame for ggplot2"
+"0","  mutate(text = paste0(""x: "", Bin, ""\n"", ""y: "", Sample, ""\n"", ""Value: "",Abundance, ""\n"")) %>%# mess around with plotly"
+"0","  ggplot(aes(x=Bin, y=Sample, fill=log10(Abundance+1), text=text)) + # plot with ggplot!"
+"0","    geom_tile() #%>%#+"
+"2","Parsed with column specification:
+cols(
+  Name = [31mcol_character()[39m,
+  `GQ2-22-10-1` = [32mcol_double()[39m,
+  `GQ2-22-10-2` = [32mcol_double()[39m,
+  `GQ2-22-10-3` = [32mcol_double()[39m,
+  `GR2-22-10-1` = [32mcol_double()[39m,
+  `GR2-22-10-2` = [32mcol_double()[39m,
+  `GR2-22-10-3` = [32mcol_double()[39m
+)
+"
+"2","Expected 2 pieces. Additional pieces discarded in 2575 rows [30, 56, 115, 116, 169, 184, 206, 211, 225, 243, 285, 296, 340, 426, 505, 549, 588, 656, 671, 722, ...]."
+"2","funs() is soft deprecated as of dplyr 0.8.0
+Please use a list of either functions or lambdas: 
+
+  # Simple named list: 
+  list(mean = mean, median = median)
+
+  # Auto named with `tibble::lst()`: 
+  tibble::lst(mean, median)
+
+  # Using lambdas
+  list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+[90mThis warning is displayed once per session.[39m"
+"2","Joining, by = ""Sample""
+"
+"2","Column `Sample` joining character vector and factor, coercing into character vector"
+"0","    #coord_flip() %>%#+"
+"0","    #facet_wrap(~Condition, scales='free_x') %>%"
+"0","p"

@@ -1,0 +1,25 @@
+{
+    "read_files": [
+        "GR2-22-10-1_R1_trimmed.fastq.gz",
+        "GR2-22-10-1_R2_trimmed.fastq.gz"
+    ],
+    "expected_format": "MU",
+    "compatible_fragment_ratio": 1.0,
+    "num_compatible_fragments": 17240124,
+    "num_assigned_fragments": 17240124,
+    "num_frags_with_concordant_consistent_mappings": 17237975,
+    "num_frags_with_inconsistent_or_orphan_mappings": 3927,
+    "strand_mapping_bias": 0.5027924103614259,
+    "MSF": 0,
+    "OSF": 0,
+    "ISF": 0,
+    "MSR": 0,
+    "OSR": 0,
+    "ISR": 0,
+    "SF": 1914,
+    "SR": 2013,
+    "MU": 0,
+    "OU": 0,
+    "IU": 0,
+    "U": 0
+}

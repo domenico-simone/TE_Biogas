@@ -1,0 +1,37 @@
+[2019-11-27 22:12:47.849] [jointLog] [info] Fragment incompatibility prior below threshold.  Incompatible fragments will be ignored.
+[2019-11-27 22:12:47.849] [jointLog] [info] parsing read library format
+[2019-11-27 22:12:47.849] [jointLog] [info] There is 1 library.
+[2019-11-27 22:12:47.964] [jointLog] [info] Loading Quasi index
+[2019-11-27 22:12:47.964] [jointLog] [info] Loading 32-bit quasi index
+[2019-11-27 22:12:56.257] [jointLog] [info] done
+[2019-11-27 22:12:56.257] [jointLog] [info] Index contained 116,479 targets
+[2019-11-27 22:12:58.800] [jointLog] [info] Automatically detected most likely library type as MU
+[2019-11-27 22:18:10.389] [jointLog] [info] Thread saw mini-batch with a maximum of 22.44% zero probability fragments
+[2019-11-27 22:18:10.434] [jointLog] [info] Thread saw mini-batch with a maximum of 23.82% zero probability fragments
+[2019-11-27 22:18:10.454] [jointLog] [info] Thread saw mini-batch with a maximum of 22.70% zero probability fragments
+[2019-11-27 22:18:10.496] [jointLog] [info] Thread saw mini-batch with a maximum of 23.00% zero probability fragments
+[2019-11-27 22:18:10.498] [jointLog] [info] Thread saw mini-batch with a maximum of 22.86% zero probability fragments
+[2019-11-27 22:18:10.512] [jointLog] [info] Thread saw mini-batch with a maximum of 22.90% zero probability fragments
+[2019-11-27 22:18:10.525] [jointLog] [info] Thread saw mini-batch with a maximum of 22.90% zero probability fragments
+[2019-11-27 22:18:10.544] [jointLog] [info] Thread saw mini-batch with a maximum of 23.16% zero probability fragments
+[2019-11-27 22:18:10.578] [jointLog] [info] Thread saw mini-batch with a maximum of 23.36% zero probability fragments
+[2019-11-27 22:18:10.616] [jointLog] [info] Thread saw mini-batch with a maximum of 22.66% zero probability fragments
+[2019-11-27 22:18:10.689] [jointLog] [info] Thread saw mini-batch with a maximum of 23.22% zero probability fragments
+[2019-11-27 22:18:10.693] [jointLog] [info] Thread saw mini-batch with a maximum of 22.82% zero probability fragments
+[2019-11-27 22:18:10.997] [fileLog] [info] 
+At end of round 0
+==================
+Observed 49592333 total fragments (49592333 in most recent round)
+
+[2019-11-27 22:18:10.997] [jointLog] [info] Computed 51,837 rich equivalence classes for further processing
+[2019-11-27 22:18:10.997] [jointLog] [info] Counted 11,771,060 total reads in the equivalence classes 
+[2019-11-27 22:18:11.000] [jointLog] [info] Mapping rate = 23.7356%
+
+[2019-11-27 22:18:11.000] [jointLog] [info] finished quantifyLibrary()
+[2019-11-27 22:18:11.001] [jointLog] [info] Starting optimizer
+[2019-11-27 22:18:11.056] [jointLog] [info] Marked 0 weighted equivalence classes as degenerate
+[2019-11-27 22:18:11.060] [jointLog] [info] iteration = 0 | max rel diff. = 3656.68
+[2019-11-27 22:18:11.365] [jointLog] [info] iteration = 100 | max rel diff. = 0.00195918
+[2019-11-27 22:18:11.368] [jointLog] [info] Finished optimizer
+[2019-11-27 22:18:11.368] [jointLog] [info] writing output 
+

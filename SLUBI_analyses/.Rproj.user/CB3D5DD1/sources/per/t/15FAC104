@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1590420430609.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2557555031",
+    "id" : "15FAC104",
+    "lastKnownWriteTime" : 1590420490,
+    "last_content_update" : 1590420490565,
+    "path" : "~/Dropbox/Research/slu/SLUBI_support/SLUBI_Project_TE_Biogas_snic2019-30-23/Metatranscriptome/metadata.tsv",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "6,26",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "text"
+}

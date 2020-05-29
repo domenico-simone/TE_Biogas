@@ -1,0 +1,380 @@
+---
+title: "TE Biogas: metatranscriptome analyses"
+author: "Domenico Simone"
+date: "May 18, 2020"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_knit$set(root.dir = "~/Dropbox/Research/slu/SLUBI_support/SLUBI_Project_TE_Biogas_snic2019-30-23")
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE, echo=FALSE)
+library(DESeq2)
+library(tximport)
+#library(GenomicFeatures)
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(gplots)
+library(pheatmap)
+library(sva)
+library(plotly)
+library(pheatmap)
+library(RColorBrewer)
+library(DT)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+## Read metadata
+metadata <- read.table("Metatranscriptome/metadata.tsv", header = TRUE)
+
+# Read bins' metadata
+metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv", header = TRUE, sep = "\t") %>%
+  rbind(read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv", header = TRUE, sep = "\t")) %>%
+  dplyr::select(user_genome, classification) %>%
+  tidyr::separate(classification, into = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+                  sep = ";", remove = TRUE)
+
+## Create export directory
+dir.create("SLUBI_analyses/export", showWarnings = FALSE)
+```
+
+```{r, eval=TRUE, echo=FALSE}
+# some useful functions
+#
+# DataTable is a wonderful package but oh boy,
+# saveWidget can't accept relative paths which is like
+# having a Ferrari fuelled with diesel
+
+saveWidgetFix <- function (widget, file, title="BWE") {
+  ## A wrapper to saveWidget which compensates for arguable BUG in
+  ## saveWidget which requires `file` to be in current working
+  ## directory.
+  ## Source: https://github.com/ramnathv/htmlwidgets/issues/299#issuecomment-375058928
+  wd<-getwd()
+  on.exit(setwd(wd))
+  outDir<-dirname(file)
+  file<-basename(file)
+  setwd(outDir)
+  saveWidget(widget, file=file, title=title)
+}
+```
+
+# Overview of gene expression at the bin level
+
+Which bins are mostly expressed in the two conditions? We will integrate this info with phylogenetic placement.
+
+```{r, eval=FALSE, echo=FALSE}
+# Do it by calculating means across conditions
+
+read_tsv("Metatranscriptome/Merged_Quant.sf") %>%  # read merged file from salmon (gene expr in TPM)
+  rename(Gene=Name) %>% # rename "Name" column into "Gene"
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = TRUE) %>% # add column with bin name (from gene name)
+  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup() %>% # summarise counts at bin level
+  gather("Sample", "Abundance", 2:ncol(.)) %>% left_join(metadata) %>% select(-Replicate) %>% select(-Sample) %>%
+  group_by_at(vars(Bin, Condition)) %>% summarise_all(funs(mean, sd)) %>% ungroup() %>% 
+  #mutate(panel=nrow)  head()
+  ggplot(aes(x=Bin, y=mean, fill=Condition)) + # plot with ggplot!
+    geom_bar(stat="identity", position=position_dodge()) +
+    geom_errorbar(aes(ymin=mean-sd, ymax=mean+sd), width=.2,
+                 position=position_dodge(.9))
+
+#ggplot(data=df, aes(x=reorder(player, df$is.winner=="TRUE", sum), fill=is.winner)) +
+
+ #   facet_wrap(~Bin)
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# Plot as heatmap with ggplot. For rmarkdown report, I have used the plotly plot after this one
+
+p <- read_tsv("Metatranscriptome/Merged_Quant.sf") %>%  # read merged file from salmon (gene expr in TPM)
+  rename(Gene=Name) %>% # rename "Name" column into "Gene"
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = TRUE) %>% # add column with bin name (from gene name)
+  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup() %>% # summarise counts at bin level
+  gather("Sample", "Abundance", 2:ncol(.)) %>% left_join(metadata) %>% # create data frame for ggplot2
+  ggplot(aes(x=Sample, y=Bin, fill=Abundance)) + # plot with ggplot!
+    geom_tile() +
+    #theme(axis.title.y = element_text(margin = margin(t = 0, r = 30, b = 30, l = 0))) +
+    facet_grid(~Condition, scales="free")# %>%
+
+# p
+# gp <- ggplotly(p) #, tooltip="text")
+  #layout(margin = list(l = 150))
+ 
+# gp[['x']][['layout']][['annotations']][[2]][['x']] <- -0.13
+# gp[['x']][['layout']][['annotations']][[1]][['y']] <- -0.05
+# gp %>% layout(margin = list(l = 250))
+```
+
+The following heatmap shows expression levels (in TPMs) grouped by bin. You can hover each cell of the heatmap to get more info.
+
+```{r, eval=TRUE, echo=FALSE, fig.height=20}
+M1 <- read_tsv("Metatranscriptome/Merged_Quant.sf") %>%  # read merged file from salmon (gene expr in TPM)
+  rename(Gene=Name) %>% # rename "Name" column into "Gene"
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = TRUE) %>% # add column with bin name (from gene name)
+  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup()
+
+#Bins <- M1$Bin
+Bins <- data.frame(Bin=M1$Bin) %>%
+  left_join(metadata_bins, by=c("Bin" = "user_genome")) %>%
+  select(Bin, Class, Genus) %>%
+  transmute(Bins = paste(Bin, Class, Genus, sep = ";")) %>%
+  pull(Bins)
+
+M1 <- select(M1, -Bin) %>% as.matrix()
+
+x <- list(
+  title = "Sample"
+#  titlefont = f
+)
+y <- list(
+  title = "Bin"
+#  titlefont = f
+)
+
+fig <- plot_ly(
+    x = colnames(M1), y = Bins,
+    z = M1, type = "heatmap"
+) %>% layout(xaxis = x, yaxis = y)
+
+fig
+```
+
+## Methods
+
+Use DESeq2 on salmon output.
+
+```{r, echo=FALSE, eval=TRUE}
+# Create data needed throughout the analysis
+## Since salmon provides transcript-level estimates only, we need a two-column data frame linking transcript id (column 1) to gene id (column 2).
+quant.files <- Sys.glob("Metatranscriptome/salmon/*/quant.sf")
+tx2gene <-  quant.files %>%
+            map(read_tsv) %>%    # read in all the files individually, using
+                                 # the function read_csv() from the readr package
+            reduce(rbind) %>%    # reduce with rbind into one dataframe
+            transmute(transcript.id=Name,
+                      gene.id=Name)
+
+## Read counts into tximport
+files <- file.path("Metatranscriptome/salmon", metadata$Sample, "quant.sf")
+names(files) <- paste0("sample", 1:6)
+#all(file.exists(files))
+se <- tximport(files, type = "salmon", tx2gene = tx2gene)
+
+## Create DESeq2 object
+dds <- DESeqDataSetFromTximport(txi = se, colData = metadata, design = ~ Condition)
+```
+
+## Exploratory analysis and visualization
+
+Prefilter the dataset (for visualization purposes **only**). Raw count data, how many genes?
+
+```{r, echo=FALSE, eval=TRUE}
+nrow(dds)
+```
+
+We can keep rows (= genes) with more than 1 count across all samples. How many genes do we have now?
+
+```{r, echo=FALSE, eval=TRUE}
+#keep <- rowSums(counts(dds)) > 1
+keep <- rowSums(counts(dds) >= 1) >= 3
+dds.exp <- dds[keep,]
+nrow(dds.exp)
+```
+
+### Pick a method to visualise sample relationships
+
+Source: https://www.bioconductor.org/packages/devel/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html#exploratory-analysis-and-visualization
+
+We need to choose between transformation methods for running exploratory analyses.
+
+**Scatterplot of transformed counts from two samples.**
+
+```{r, eval=TRUE}
+show.transform <- function(dds.exp){
+## set blind = FALSE if the conditions are expected to introduce
+## strong differences in a large proportion of the genes
+vsd <- vst(dds.exp, blind = FALSE)
+rld <- rlog(dds.exp, blind = FALSE)
+dds <- estimateSizeFactors(dds.exp)
+df <- bind_rows(
+  as_data_frame(log2(counts(dds, normalized=TRUE)[, 1:2]+1)) %>%
+    mutate(transformation = "log2(x + 1)"),
+  as_data_frame(assay(vsd)[, 1:2]) %>% mutate(transformation = "vst"),
+  as_data_frame(assay(rld)[, 1:2]) %>% mutate(transformation = "rlog"))
+
+  colnames(df)[1:2] <- c("x", "y")
+
+  lvls <- c("log2(x + 1)", "vst", "rlog")
+
+  df$transformation <- factor(df$transformation, levels=lvls)
+  ggplot(df, aes(x = x, y = y)) + geom_hex(bins = 80) +
+  coord_fixed() + facet_grid( . ~ transformation)
+}
+show.transform(dds.exp)
+```
+
+**Which samples are similar to each other, which are different?** Does this fit to the expectation from the experiment’s design? We use the vst-transformed results to:
+
+- draw a heatmap of sample-sample distances
+- run a PCA analysis.
+
+**Heatmap of sample-to-sample distances using the variance stabilizing transformed values.**
+
+```{r, echo=FALSE, eval=TRUE}
+vsd <- vst(dds.exp, blind = FALSE)
+
+# We use the R function *dist* to calculate the Euclidean distance between samples. To ensure we have a roughly equal contribution from all genes, we use it on the VST data. We need to transpose the matrix of values using t, because the dist function expects the different samples to be rows of its argument, and different dimensions (here, genes) to be columns.
+sampleDists <- dist(t(assay(vsd)))
+# In order to plot the sample distance matrix with the rows/columns arranged by the distances in our distance matrix, we manually provide sampleDists to the clustering_distance argument of the pheatmap function. Otherwise the pheatmap function would assume that the matrix contains the data values themselves, and would calculate distances between the rows/columns of the distance matrix, which is not desired. We also manually specify a blue color palette using the colorRampPalette function from the RColorBrewer package.
+sampleDistMatrix <- as.matrix( sampleDists )
+rownames(sampleDistMatrix) <- dds$Sample
+colnames(sampleDistMatrix) <- NULL
+colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
+pheatmap(sampleDistMatrix,
+clustering_distance_rows = sampleDists,
+clustering_distance_cols = sampleDists,
+col = colors)
+```
+
+**PCA analysis**
+
+```{r, echo=FALSE, eval=TRUE}
+plotPCA.ggplot <- function(vsd){
+  PCA.data <- plotPCA(vsd, intgroup = c("Condition"), returnData = TRUE)
+  ggplot(PCA.data, aes(x = PC1, y = PC2, color = Condition)) +
+  geom_point(size =3) +
+  xlab(paste0("PC1: ", round(100 * attr(PCA.data, "percentVar"))[1], "% variance")) +
+  #xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC1: ", round(100 * attr(PCA.data, "percentVar"))[2], "% variance")) +
+  coord_fixed()
+}
+
+plotPCA.ggplot(vsd)
+```
+
+**Heatmap showing how much each gene deviates in a specific sample from the gene’s average (variance) across all samples. Please note: this is NOT a list of differentially expressed genes!!!** Top 20 genes are shown. The complete table is shown [here](./export/topVarGenes.html) in interactive html format and [here](./export/topVarGenes.csv) in csv format.
+
+<details>
+  <summary>Details about the heatmap construction...</summary>
+In the sample distance heatmap made previously, the dendrogram at the side shows us a hierarchical clustering of the samples. Such a clustering can also be performed for the genes. Since the clustering is only relevant for genes that actually carry a signal, one usually would only cluster a subset of the most highly variable genes. Here, for demonstration, let us select the 20 genes with the highest variance across samples. We will work with the VST data.
+
+The heatmap becomes more interesting if we do not look at absolute expression strength but rather at the amount by which each gene deviates in a specific sample from the gene’s average across all samples. Hence, we center each genes’ values across samples, and plot a heatmap (figure below).
+</details>
+
+```{r, echo=FALSE, eval=TRUE, fig.width=15, fig.height=15}
+topVarGenes <- head(order(rowVars(assay(vsd)), decreasing = TRUE), 20)
+mat  <- assay(vsd)[ topVarGenes, ]
+mat  <- mat - rowMeans(mat)
+colnames(mat) <- dds$Sample
+anno <- as.data.frame(colData(vsd)[, c("Condition")])
+colnames(anno) <- "Condition"
+rownames(anno) <- dds$Sample
+pheatmap(mat, annotation_col = anno)
+
+# Export the table
+topVarGenes.all <- order(rowVars(assay(vsd)), decreasing = TRUE)
+mat.all  <- assay(vsd)[ topVarGenes.all, ]
+mat.all  <- mat.all - rowMeans(mat.all)
+colnames(mat.all) <- dds$Sample
+mat.all %>% write.csv("SLUBI_analyses/export/topVarGenes.csv", quote = FALSE, sep = ",")
+
+# Create DT view of table
+mat.all %>%
+  round(digits = 2) %>%
+  as.data.frame() %>%
+  mutate(Gene=rownames(.)) %>%
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = FALSE) %>%
+  select(Bin, Gene, starts_with("G")) %>%
+  datatable(options = list(
+  initComplete = JS(
+    "function(settings, json) {",
+    "$('body').css({'font-family': 'Calibri'});",
+    "}"
+  )
+)) %>% saveWidgetFix(file="SLUBI_analyses/export/topVarGenes.html")
+```
+
+# Differential gene expression analysis
+
+Aims:
+
+- Perform DGE
+- Group by bin
+- Group by taxonomy
+- Group by functional annotation
+
+```{r, echo=FALSE, eval=TRUE}
+dds.deseq <- DESeq(dds)
+res <- results(dds.deseq)
+
+# res is like
+#
+# > mcols(res, use.names = TRUE)
+# DataFrame with 6 rows and 2 columns
+#                        type                                         description
+#                 <character>                                         <character>
+# baseMean       intermediate           mean of normalized counts for all samples
+# log2FoldChange      results log2 fold change (MLE): Condition treatment vs ctrl
+# lfcSE               results         standard error: Condition treatment vs ctrl
+# stat                results         Wald statistic: Condition treatment vs ctrl
+# pvalue              results      Wald test p-value: Condition treatment vs ctrl
+# padj                results                                BH adjusted p-values
+
+# summary(res)
+```
+
+## Summary of DGE analysis (I)
+
+- 116479 genes
+- 82452 genes with non-zero counts (from `summary(res)`)
+- 21171 genes are up-regulated (LFC > 0)
+- 9507 genes are down-regulated (LFC < 0)
+
+An interactive, detailed report of the DGE analysis is available [here](./export/DGE_results.html).
+
+```{r, echo=FALSE, eval=TRUE}
+subset(res, padj < 0.05) %>%
+  as.data.frame() %>%
+  round(digits = 2) %>%
+  mutate(Gene=rownames(.)) %>%
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = FALSE) %>%
+    left_join(metadata_bins, by=c("Bin" = "user_genome")) %>%
+    #select(Bin, Class, Genus) %>%
+#    transmute(Bins = paste(Bin, Class, Genus, sep = ";")) %>%
+  select(Bin, Class, Genus, Gene, 1:6) %>%
+  datatable(filter = "top", options = list(autoWidth=TRUE)) %>%
+    # formatStyle(1:length(df[1,]),
+    #                   backgroundColor = styleInterval(mean(as.numeric(df[1,])), c("red","green")))
+    formatStyle('log2FoldChange',
+                      backgroundColor = styleInterval(0, c("red","green"))) %>%
+#    formatStyle('log2foldChange', )
+  saveWidgetFix(file="SLUBI_analyses/export/DGE_results.html", title="TE Biogas: differential gene expression analysis")
+```
+
+```{r, echo=FALSE, eval=TRUE}
+subset(res, padj < 0.05) %>%
+  as.data.frame() %>%
+  round(digits = 2) %>%
+  mutate(Gene=rownames(.)) %>%
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = FALSE) %>%
+    left_join(metadata_bins, by=c("Bin" = "user_genome")) %>%
+    #select(Bin, Class, Genus) %>%
+#    transmute(Bins = paste(Bin, Class, Genus, sep = ";")) %>%
+  select(Bin, Class, Genus, Gene, 1:6) %>%
+  group_by(Bin, Class, Genus) %>% #head()
+  summarize(total_DE_genes = n(),
+            overexpressed_genes = length(log2FoldChange[log2FoldChange > 0]),
+            underexpressed_genes = length(log2FoldChange[log2FoldChange < 0])) %>%
+  ungroup() %>%
+  datatable(filter = "top", options = list(autoWidth=TRUE)) #%>%
+  # formatStyle(1:length(df[1,]),
+  #                   backgroundColor = styleInterval(mean(as.numeric(df[1,])), c("red","green")))
+  # formatStyle('log2FoldChange',
+  #                   backgroundColor = styleInterval(0, c("red","green")))
+#    formatStyle('log2foldChange', )
+#  saveWidgetFix(file="SLUBI_analyses/export/DGE_results.html", title="TE Biogas: differential gene expression analysis")
+
+```
