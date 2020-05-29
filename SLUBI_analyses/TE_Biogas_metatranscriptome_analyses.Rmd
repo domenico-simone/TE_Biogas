@@ -64,7 +64,7 @@ metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac1
 # Export them to file
 #write.csv2(metadata_bins, file = "SLUBI_analyses/export/bins_taxonomic_assignment.csv")
 metadata_bins %>% 
-  datatable() %>%
+  datatable(filter = "top", options = list(autoWidth=TRUE)) %>%
   saveWidgetFix(file="SLUBI_analyses/export/bins_taxonomic_assignment.html",
                 title = "Bins: taxonomic assignment")
 ```
