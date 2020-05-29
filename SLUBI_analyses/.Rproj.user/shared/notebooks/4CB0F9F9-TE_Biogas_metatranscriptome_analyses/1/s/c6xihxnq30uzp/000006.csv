@@ -1,9 +1,0 @@
-"0","# Read bins' metadata
-metadata_bins <- read.table(""SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv"", header = TRUE, sep = ""\t"") %>%
-  rbind(read.table(""SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv"", header = TRUE, sep = ""\t"")) %>%
-  dplyr::select(user_genome, classification) %>%
-  dplyr::separate(classification, into = c(""Domain"", ""Phylum"", ""Class"", ""Order"", ""Family"", ""Genus"", ""Species""),
-                  sep = "";"", remove = TRUE)
-"
-"2","Error: 'separate' is not an exported object from 'namespace:dplyr'
-"

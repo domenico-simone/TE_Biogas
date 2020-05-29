@@ -27,21 +27,6 @@ library(DT)
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
-## Read metadata
-metadata <- read.table("Metatranscriptome/metadata.tsv", header = TRUE)
-
-# Read bins' metadata
-metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv", header = TRUE, sep = "\t") %>%
-  rbind(read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv", header = TRUE, sep = "\t")) %>%
-  dplyr::select(user_genome, classification) %>%
-  tidyr::separate(classification, into = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                  sep = ";", remove = TRUE)
-
-## Create export directory
-dir.create("SLUBI_analyses/export", showWarnings = FALSE)
-```
-
-```{r, eval=TRUE, echo=FALSE}
 # some useful functions
 #
 # DataTable is a wonderful package but oh boy,
@@ -62,9 +47,31 @@ saveWidgetFix <- function (widget, file, title="BWE") {
 }
 ```
 
+```{r, eval=TRUE, echo=FALSE}
+## Create export directory
+dir.create("SLUBI_analyses/export", showWarnings = FALSE)
+
+## Read metadata
+metadata <- read.table("Metatranscriptome/metadata.tsv", header = TRUE)
+
+# Read bins' metadata
+metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv", header = TRUE, sep = "\t") %>%
+  rbind(read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv", header = TRUE, sep = "\t")) %>%
+  dplyr::select(user_genome, classification) %>%
+  tidyr::separate(classification, into = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+                  sep = ";", remove = TRUE)
+
+# Export them to file
+#write.csv2(metadata_bins, file = "SLUBI_analyses/export/bins_taxonomic_assignment.csv")
+metadata_bins %>% 
+  datatable() %>%
+  saveWidgetFix(file="SLUBI_analyses/export/bins_taxonomic_assignment.html",
+                title = "Bins: taxonomic assignment")
+```
+
 # Overview of gene expression at the bin level
 
-Which bins are mostly expressed in the two conditions? We will integrate this info with phylogenetic placement.
+Which bins are mostly expressed in the two conditions? We will integrate this info with taxonomic assignment. Complete taxonomic assignments are available [here](./export/bins_taxonomic_assignment.html).
 
 ```{r, eval=FALSE, echo=FALSE}
 # Do it by calculating means across conditions
@@ -378,3 +385,10 @@ subset(res, padj < 0.05) %>%
 #  saveWidgetFix(file="SLUBI_analyses/export/DGE_results.html", title="TE Biogas: differential gene expression analysis")
 
 ```
+
+# Supporting files
+
+These files have already been linked through this report, but are collected here for convenience.
+
+- [Taxonomic assignment of bins (performed with gtdb-tk)](./export/bins_taxonomic_assignment.html)
+- [Complete report of DGE analysis, gene by gene](./export/DGE_results.html)

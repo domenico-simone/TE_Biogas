@@ -1,8 +1,0 @@
-"0","#keep <- rowSums(counts(dds)) > 1"
-"0","keep <- rowSums(counts(dds) >= 1) >= 3"
-"0","dds.exp <- dds[keep,]"
-"0","nrow(dds.exp)"
-"1","[1]"
-"1"," 51991"
-"1","
-"

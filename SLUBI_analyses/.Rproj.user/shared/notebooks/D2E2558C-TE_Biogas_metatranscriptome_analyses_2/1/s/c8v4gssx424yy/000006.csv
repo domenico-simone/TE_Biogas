@@ -1,8 +1,0 @@
-"0","topVarGenes <- head(order(rowVars(assay(vsd)), decreasing = TRUE), 20)"
-"0","mat  <- assay(vsd)[ topVarGenes, ]"
-"0","mat  <- mat - rowMeans(mat)"
-"0","colnames(mat) <- dds$Sample"
-"0","anno <- as.data.frame(colData(vsd)[, c(""Condition"")])"
-"0","colnames(anno) <- ""Condition"""
-"0","rownames(anno) <- dds$Sample"
-"0","pheatmap(mat, annotation_col = anno)"
