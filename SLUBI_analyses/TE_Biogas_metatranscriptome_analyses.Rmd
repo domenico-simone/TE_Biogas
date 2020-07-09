@@ -52,7 +52,13 @@ saveWidgetFix <- function (widget, file, title="BWE") {
 dir.create("SLUBI_analyses/export", showWarnings = FALSE)
 
 ## Read metadata
-metadata <- read.table("Metatranscriptome/metadata.tsv", header = TRUE)
+metadata.t <- read.table("Metatranscriptome/metadata.tsv", header = TRUE) %>%
+                mutate(Sample_type="metatranscriptome")
+metadata.g <- read.table("Metagenome/metadata.tsv", header = TRUE) %>%
+                mutate(Sample_type="metagenome")
+
+#metadata <- read.table("Metatranscriptome/metadata.tsv", header = TRUE)
+metadata <- metadata.t %>% rbind(metadata.g)
 
 # Read bins' metadata
 metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv", header = TRUE, sep = "\t") %>%
@@ -147,6 +153,27 @@ fig <- plot_ly(
 ) %>% layout(xaxis = x, yaxis = y)
 
 fig
+```
+
+Now we'll try to integrate bin abundance in metagenomic samples.
+
+```{r}
+#setwd("/home/adm2/Dropbox/Research/slu/SLUBI_support/SLUBI_Project_TE_Biogas_snic2019-30-23")
+bin_quantification <- read_tsv("SLUBI_analyses/bin_quantification/Merged_quant.sf")
+colnames(bin_quantification) <- c("Bin__contig", "GQ2", "GR2")
+
+metag.quant <- bin_quantification %>%
+  tidyr::separate(col=Bin__contig, c("Bin", NA), sep = "__", remove = TRUE) %>% # add column with bin name (from gene name)
+  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup()
+
+metat.quant <- read_tsv("Metatranscriptome/Merged_Quant.sf") %>%  # read merged file from salmon (gene expr in TPM)
+  rename(Gene=Name) %>% # rename "Name" column into "Gene"
+  separate(col=Gene, c("Bin", NA), sep = "_[01]", remove = TRUE) %>% # add column with bin name (from gene name)
+  group_by(Bin) %>% summarise_all(funs(sum)) %>% ungroup()
+
+metag.metat.quant <- full_join(metag.quant, metat.quant) %>%
+  tidyr::gather(key = "Sample", value = "Abundance", 2:ncol(.)) %>% 
+  left_join(metadata)
 ```
 
 ## Methods
