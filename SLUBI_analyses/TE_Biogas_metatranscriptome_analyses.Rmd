@@ -65,11 +65,13 @@ metadata_bins <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac1
   rbind(read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv", header = TRUE, sep = "\t")) %>%
   dplyr::select(user_genome, classification) %>%
   tidyr::separate(classification, into = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
-                  sep = ";", remove = TRUE)
+                  sep = ";", remove = TRUE) %>%
+  left_join(read.table("SLUBI_analyses/bins_taxonomy_wf/all_summary.tab", header=TRUE, sep="\t"), by = c("user_genome" = "Bin"))
 
 # Export them to file
 #write.csv2(metadata_bins, file = "SLUBI_analyses/export/bins_taxonomic_assignment.csv")
 metadata_bins %>% 
+  select(-c(n_genomes, n_markers, n_marker_sets, X0, X1, X2, X3, X4, X5)) %>%
   datatable(filter = "top", options = list(autoWidth=TRUE)) %>%
   saveWidgetFix(file="SLUBI_analyses/export/bins_taxonomic_assignment.html",
                 title = "Bins: taxonomic assignment")
@@ -160,6 +162,8 @@ fig
 
 Now we'll try to integrate bin abundance in metagenomic samples.
 
+With ggplot2 `geom_tile`...
+
 ```{r, eval=TRUE, echo=FALSE, fig.height=20}
 #setwd("/home/adm2/Dropbox/Research/slu/SLUBI_support/SLUBI_Project_TE_Biogas_snic2019-30-23")
 bin_quantification <- read_tsv("SLUBI_analyses/bin_quantification/Merged_quant.sf")
@@ -185,14 +189,36 @@ loveit <- metag.metat.quant %>%
   ggplot(aes(Sample, Bin)) + 
     geom_tile(aes(fill = Abundance), colour = "white") +
     scale_fill_gradient(low = "white", high = "steelblue") +
-    facet_grid(Class~Sample_type, space = "free", scales = "free") +
-     theme(strip.text.y = element_text(angle = 0))
+    facet_grid(Class~Condition, space = "free", scales = "free") +
+     theme(strip.text.y = element_text(angle = 0),
+           axis.text.x = element_text(angle = 90))
 
-# ggplot(df, aes(z, x)) + 
-#   geom_point() + 
-#   ggforce::facet_col(~y, scales = "free", space = "free",strip.position = "right")
-#ggplotly(loveit)
 loveit
+```
+
+Try with pheatmap
+
+```{r, eval=TRUE, echo=FALSE, fig.height=20}
+metag.metat.quant.pheatmap <- metag.metat.quant %>%
+                                select(Bin, Sample, Abundance) %>% 
+                                spread(Sample, Abundance) 
+
+rownames(metag.metat.quant.pheatmap) <- metag.metat.quant.pheatmap$Bin
+metag.metat.quant.pheatmap <- select(metag.metat.quant.pheatmap, -Bin) %>%
+                                as.matrix()
+
+metadata.anno.col <- select(metadata, -c(Sample, Replicate))
+rownames(metadata.anno.col) <- metadata$Sample
+metadata.anno.row <- select(metadata_bins.2, c(Class, Contamination, Completeness))
+rownames(metadata.anno.row) <- metadata_bins.2$Bin
+metadata.anno.row <- metadata.anno.row %>% data.table::setorder(cols=Class)
+metag.metat.quant.pheatmap.ordered <- metag.metat.quant.pheatmap[rownames(metadata.anno.row),]
+pheatmap(metag.metat.quant.pheatmap.ordered,
+         cluster_rows = FALSE,
+         cluster_cols = FALSE,
+         annotation_col = metadata.anno.col,
+         annotation_row = metadata.anno.row)
+
 ```
 
 ## Methods
