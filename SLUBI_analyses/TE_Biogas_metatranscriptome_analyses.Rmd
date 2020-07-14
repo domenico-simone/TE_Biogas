@@ -212,9 +212,26 @@ metag.metat.quant.pheatmap <- select(metag.metat.quant.pheatmap, -Bin) %>%
 
 metadata.anno.col <- select(metadata, -c(Sample, Replicate))
 rownames(metadata.anno.col) <- metadata$Sample
-metadata.anno.row <- select(metadata_bins.2, c(Class, Contamination, Completeness, Genus))
-rownames(metadata.anno.row) <- metadata_bins.2$Bin
-metadata.anno.row <- metadata.anno.row %>% data.table::setorder(cols=Class)
+## ABSOLUTE WITCHCRAFT THIS MODIFIES metadata_bins, metadata_bins.2
+# metadata.bins.3 <- cbind(metadata_bins.2)
+# metadata.anno.row <- select(metadata.bins.3, c(Class, Contamination, Completeness, Genus))
+# rownames(metadata.anno.row) <- metadata.bins.3$Bin
+# #metadata.anno.row <- metadata.anno.row %>% data.table::setorder(Class)
+# metadata.anno.row <- data.table::setorder(metadata.anno.row, Class)
+##
+#########
+metadata.anno.row <- read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.bac120.summary.tsv", header = TRUE, sep = "\t") %>%
+  rbind(read.table("SLUBI_analyses/Bins_taxonomy_assignment/gtdbtk.ar122.summary.tsv", header = TRUE, sep = "\t")) %>%
+  dplyr::select(user_genome, classification) %>%
+  tidyr::separate(classification, into = c("Domain", "Phylum", "Class", "Order", "Family", "Genus", "Species"),
+                  sep = ";", remove = TRUE) %>%
+  left_join(read.table("SLUBI_analyses/bins_taxonomy_wf/all_summary.tab", header=TRUE, sep="\t"), by = c("user_genome" = "Bin")) %>%
+  select(c(user_genome, Class, Contamination, Completeness, Genus)) %>%
+  data.table::setorder(Class)
+rownames(metadata.anno.row) <- metadata.anno.row$user_genome
+metadata.anno.row <- select(metadata.anno.row, -user_genome)
+##########
+#metadata.anno.row <- metadata.anno.row[order("Class"),]
 metag.metat.quant.pheatmap.ordered <- metag.metat.quant.pheatmap[rownames(metadata.anno.row),]
 pheatmap(metag.metat.quant.pheatmap.ordered,
          cluster_rows = FALSE,
