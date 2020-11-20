@@ -24,6 +24,7 @@ library(plotly)
 library(pheatmap)
 library(RColorBrewer)
 library(DT)
+library(goseq)
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
@@ -482,9 +483,11 @@ subset(res, padj < 0.05) %>%
 
 ```
 
-# Gene Set Enrichment Analysis (GSEA)
+# Gene Set Testing
 
-```{r}
+## GO analysis
+
+```{r, eval=TRUE}
 # as in http://127.0.0.1:31865/library/goseq/doc/goseq.pdf
 
 # create table with
@@ -508,22 +511,30 @@ genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go",
 
 Fit the PWF
 
-```{r}
+```{r, eval=TRUE}
 pwf <- nullp(DEgenes = DEgenes, bias.data = DE_genes$length)
 ```
 
-## GO analysis
-
-```{r}
+```{r, eval=TRUE}
 GO.wall <- goseq(pwf, gene2cat = genes_GO)
 ```
 
-Make sense of results?
+An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
 
-```{r}
-enriched.GO=GO.wall$category[p.adjust(GO.wall$over_represented_pvalue,
-                                      method="BH")<.05]
-head(enriched.GO)
+```{r, eval=TRUE}
+enriched.GO.wall <- GO.wall %>%
+                      mutate(over_represented_pvalue_padjust = p.adjust(over_represented_pvalue, method="BH")) %>%
+                      mutate(under_represented_pvalue_padjust = p.adjust(under_represented_pvalue, method="BH")) %>%
+                      dplyr::filter(over_represented_pvalue_padjust < .05)
+
+enriched.GO.wall %>%
+  datatable(filter = "top", options = list(autoWidth=TRUE, initComplete = JS(
+    "function(settings, json) {",
+    "$('body').css({'font-family': 'Arial'});",
+    "}"
+  )
+)) %>%
+  saveWidgetFix(file="SLUBI_analyses/export/goseq_GO_results.html", title="TE Biogas: goseq analysis with GO categories")
 ```
 
 # Supporting files
@@ -532,3 +543,5 @@ These files have already been linked through this report, but are collected here
 
 - [Taxonomic assignment of bins (performed with gtdb-tk)](./export/bins_taxonomic_assignment.html)
 - [Complete report of DGE analysis, gene by gene](./export/DGE_results.html)
+- [Complete list of enriched GO terms](./export/goseq_GO_results.html)
+
