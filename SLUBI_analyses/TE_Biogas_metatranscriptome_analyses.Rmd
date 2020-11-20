@@ -519,8 +519,6 @@ pwf <- nullp(DEgenes = DEgenes, bias.data = DE_genes$length)
 GO.wall <- goseq(pwf, gene2cat = genes_GO)
 ```
 
-An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
-
 ```{r, eval=TRUE}
 enriched.GO.wall <- GO.wall %>%
                       mutate(over_represented_pvalue_padjust = p.adjust(over_represented_pvalue, method="BH")) %>%
@@ -536,6 +534,46 @@ enriched.GO.wall %>%
 )) %>%
   saveWidgetFix(file="SLUBI_analyses/export/goseq_GO_results.html", title="TE Biogas: goseq analysis with GO categories")
 ```
+
+Analysis is performed with the Wallenius method (default for goseq). Following, three plots of top 50 over-represented GO terms (by adjusted p-value) for each GO ontology (BP = Biological Process, MF = Molecular Function, CC = Cellular Component).
+
+```{r, eval=TRUE, fig.width=10, fig.height=10}
+enriched.GO.wall %>% 
+  filter(ontology=="BP") %>%
+  head(50) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in BP") +
+    xlab("% DE in category") +
+    ylab("Category") +
+    labs(size="Count", colour="adj P value")
+```
+
+```{r, eval=TRUE, fig.width=10, fig.height=10}
+enriched.GO.wall %>% 
+  filter(ontology=="MF") %>%
+  head(50) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in MF") +
+    xlab("% DE in category") +
+    ylab("Category") +
+    labs(size="Count", colour="adj P value")
+```
+
+```{r, eval=TRUE, fig.width=10, fig.height=10}
+enriched.GO.wall %>% 
+  filter(ontology=="CC") %>%
+  head(50) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in CC") +
+    xlab("% DE in category") +
+    ylab("Category") +
+    labs(size="Count", colour="adj P value")
+```
+
+An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
 
 # Supporting files
 
