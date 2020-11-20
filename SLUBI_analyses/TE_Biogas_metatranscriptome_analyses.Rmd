@@ -33,7 +33,7 @@ library(DT)
 # saveWidget can't accept relative paths which is like
 # having a Ferrari fuelled with diesel
 
-saveWidgetFix <- function (widget, file, title="BWE") {
+saveWidgetFix <- function (widget, file, title="TE Biogas: report") {
   ## A wrapper to saveWidget which compensates for arguable BUG in
   ## saveWidget which requires `file` to be in current working
   ## directory.
@@ -207,8 +207,11 @@ metag.metat.quant.pheatmap <- metag.metat.quant %>%
                                 spread(Sample, Abundance) 
 
 rownames(metag.metat.quant.pheatmap) <- metag.metat.quant.pheatmap$Bin
+metag.metat.quant.pheatmap.rownames <- rownames(metag.metat.quant.pheatmap)
 metag.metat.quant.pheatmap <- select(metag.metat.quant.pheatmap, -Bin) %>%
                                 as.matrix()
+
+rownames(metag.metat.quant.pheatmap) <- metag.metat.quant.pheatmap.rownames
 
 metadata.anno.col <- select(metadata, -c(Sample, Replicate))
 rownames(metadata.anno.col) <- metadata$Sample
@@ -477,6 +480,50 @@ subset(res, padj < 0.05) %>%
 #    formatStyle('log2foldChange', )
 #  saveWidgetFix(file="SLUBI_analyses/export/DGE_results.html", title="TE Biogas: differential gene expression analysis")
 
+```
+
+# Gene Set Enrichment Analysis (GSEA)
+
+```{r}
+# as in http://127.0.0.1:31865/library/goseq/doc/goseq.pdf
+
+# create table with
+# - gene names
+# - DE status (1/0)
+# - gene length
+DE_genes <- data.frame(gene=rownames(res),
+                       DE=as.integer(res$padj <= 0.05)) %>%
+            tidyr::separate(gene, into = c("AS", "TE", "serial"), sep = "_") %>%
+            tidyr::unite(gene, AS, TE, serial, sep = "_") %>%
+            inner_join(read.table("SLUBI_analyses/gene_enrichment/all.proteins.lengths", header=TRUE, sep = "\t"))
+
+DE_genes$DE[is.na(DE_genes$DE)] <- 0
+
+DEgenes <- DE_genes$DE
+names(DEgenes) <- DE_genes$gene
+
+# read GO terms
+genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go", header=FALSE, sep="\t")
+```
+
+Fit the PWF
+
+```{r}
+pwf <- nullp(DEgenes = DEgenes, bias.data = DE_genes$length)
+```
+
+## GO analysis
+
+```{r}
+GO.wall <- goseq(pwf, gene2cat = genes_GO)
+```
+
+Make sense of results?
+
+```{r}
+enriched.GO=GO.wall$category[p.adjust(GO.wall$over_represented_pvalue,
+                                      method="BH")<.05]
+head(enriched.GO)
 ```
 
 # Supporting files
