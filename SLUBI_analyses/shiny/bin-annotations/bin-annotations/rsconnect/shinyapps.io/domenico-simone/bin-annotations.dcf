@@ -5,8 +5,8 @@ account: domenico-simone
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3301358
-bundleId: 3905697
+bundleId: 3905782
 url: https://domenico-simone.shinyapps.io/bin-annotations/
-when: 1606327302.15099
+when: 1606328540.76964
 asMultiple: FALSE
 asStatic: FALSE

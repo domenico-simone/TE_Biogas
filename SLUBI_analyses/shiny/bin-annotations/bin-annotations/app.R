@@ -46,11 +46,12 @@ ui <- fluidPage(
 
     # Application title
     titlePanel("TE Biogas: bin annotations"),
+    tags$img(src = "SLUBI_logo_smaller.png", align="right"),
 
     # Sidebar with checkboxes for displaying columns 
     sidebarLayout(
         sidebarPanel(
-            checkboxGroupInput("show_vars", "Annotations to show:",
+            checkboxGroupInput("show_vars", "Columns/annotations to show:",
                                names(gene.go_ko), selected = names(gene.go_ko))
             # sliderInput("bins",
             #             "Number of bins:",
@@ -79,7 +80,7 @@ server <- function(input, output) {
                           colReorder = TRUE,
                           fixedHeader = TRUE,
                           pageLength = 50,
-                          lengthMenu = c(5, 10, 25, 50),
+                          lengthMenu = c(5, 10, 25, 50, 100, 200, 500, 1000),
                           buttons = list(
                               # list(extend = "colvis", columns = 1:ncol(.)),
                               c('copy', 'csv', 'excel'))
