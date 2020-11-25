@@ -577,38 +577,9 @@ An interactive, detailed report of the goseq analysis with GO terms is available
 
 # Supporting files
 
-These files have already been linked through this report, but are collected here for convenience.
+These files might have already been linked through this report, but are collected here for convenience.
 
 - [Taxonomic assignment of bins (performed with gtdb-tk)](./export/bins_taxonomic_assignment.html)
+- [Functional annotation of bin genes (performed with eggnog-mapper)](https://domenico-simone.shinyapps.io/bin-annotations/)
 - [Complete report of DGE analysis, gene by gene](./export/DGE_results.html)
 - [Complete list of enriched GO terms](./export/goseq_GO_results.html)
-
-## Summary table with genes and functional annotation
-
-```{r}
-gene.go_ko <- read_delim("SLUBI_analyses/gene_enrichment/all.proteins.emapper.out.emapper.annotations", delim = "\t", col_names = FALSE, comment = "#") %>%
-  select(c(1,6,7,8,9,10,11,12,13,14,15,16,22))
-
-colnames(gene.go_ko) <- c("gene",
-                          "preferred_name",
-                          "GO",
-                          "EC",
-                          "KEGG_ko",
-                          "KEGG_Pathway",
-                          "KEGG_Module",
-                          "KEGG_Reaction",
-                          "KEGG_rclass",
-                          "BRITE",
-                          "KEGG_TC",
-                          "CAZy",
-                          "Free_text_description")
-
-gene.go_ko %>% 
-  datatable(filter = "top", options = list(autoWidth=TRUE, initComplete = JS(
-    "function(settings, json) {",
-    "$('body').css({'font-family': 'Arial'});",
-    "}"
-  )
-)) %>%
-  saveWidgetFix(file="SLUBI_analyses/export/gene_annotation.html", title="Gene annotations")
-```
