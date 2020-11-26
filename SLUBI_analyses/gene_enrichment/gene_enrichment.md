@@ -130,6 +130,7 @@ Same for KO ids.
 eggnog_out = open('gene_enrichment/all.proteins.emapper.out.emapper.annotations', 'r')
 
 ko_annotations = open('gene_enrichment/all.proteins.emapper.ko', 'w')
+ko_pathways_annotations = open('gene_enrichment/all.proteins.emapper.ko.pathways', 'w')
 go_annotations = open('gene_enrichment/all.proteins.emapper.go', 'w')
 
 for l in eggnog_out:
@@ -139,6 +140,7 @@ for l in eggnog_out:
     gene_id = l[0]
     go_list = l[6].split(",")
     ko_list = l[8].split(",")
+    ko_pathway_list = l[9].split(",")
     if go_list[0] != "":
         for go in go_list:
             _ = go_annotations.write("{gene_id}\t{go}\n".format(gene_id=gene_id,
@@ -147,7 +149,12 @@ for l in eggnog_out:
         for ko in ko_list:
             _ = ko_annotations.write("{gene_id}\t{ko}\n".format(gene_id=gene_id,
                                                             ko=ko))
+    if ko_pathway_list[0] != "":
+        for ko_p in ko_pathway_list:
+            _ = ko_pathways_annotations.write("{gene_id}\t{ko_p}\n".format(gene_id=gene_id,
+                                                            ko_p=ko_p))
 
 ko_annotations.close()
 go_annotations.close()
+ko_pathways_annotations.close()
 ```

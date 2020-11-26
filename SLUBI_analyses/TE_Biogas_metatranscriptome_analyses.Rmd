@@ -541,7 +541,8 @@ Analysis is performed with the Wallenius method (default for goseq). Following, 
 enriched.GO.wall %>% 
   filter(ontology=="BP") %>%
   head(50) %>%
-  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
     ggtitle("Top over-represented categories in BP") +
     xlab("% DE in category") +
@@ -553,7 +554,8 @@ enriched.GO.wall %>%
 enriched.GO.wall %>% 
   filter(ontology=="MF") %>%
   head(50) %>%
-  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
     ggtitle("Top over-represented categories in MF") +
     xlab("% DE in category") +
@@ -565,7 +567,8 @@ enriched.GO.wall %>%
 enriched.GO.wall %>% 
   filter(ontology=="CC") %>%
   head(50) %>%
-  ggplot(aes(x=numDEInCat/numInCat*100, y=term)) + # plot with ggplot!
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
     ggtitle("Top over-represented categories in CC") +
     xlab("% DE in category") +
@@ -574,6 +577,33 @@ enriched.GO.wall %>%
 ```
 
 An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
+
+## KO analysis
+
+```{r}
+# read GO terms
+genes_KO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.ko.pathways", header=FALSE, sep="\t")
+genes_KO <- data.frame(base::lapply(genes_KO, function(x) {
+    gsub("ko:", "", x)
+}))
+
+# run goseq by testing KEGG
+KO.wall <- goseq(pwf, gene2cat = genes_KO, test.cats=c("KEGG"))
+
+enriched.KO.wall <- KO.wall %>%
+                      mutate(over_represented_pvalue_padjust = p.adjust(over_represented_pvalue, method="BH")) %>%
+                      mutate(under_represented_pvalue_padjust = p.adjust(under_represented_pvalue, method="BH")) %>%
+                      dplyr::filter(over_represented_pvalue_padjust < .05)
+
+enriched.KO.wall %>%
+  datatable(filter = "top", options = list(autoWidth=TRUE, initComplete = JS(
+    "function(settings, json) {",
+    "$('body').css({'font-family': 'Arial'});",
+    "}"
+  )
+)) %>%
+  saveWidgetFix(file="SLUBI_analyses/export/goseq_KO_results.html", title="TE Biogas: goseq analysis with KO categories")
+```
 
 # Supporting files
 
