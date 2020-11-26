@@ -151,6 +151,7 @@ for l in eggnog_out:
                                                             ko=ko))
     if ko_pathway_list[0] != "":
         for ko_p in ko_pathway_list:
+            ko_p = ko_p[-5:]
             _ = ko_pathways_annotations.write("{gene_id}\t{ko_p}\n".format(gene_id=gene_id,
                                                             ko_p=ko_p))
 

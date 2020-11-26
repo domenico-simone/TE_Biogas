@@ -483,9 +483,14 @@ subset(res, padj < 0.05) %>%
 
 ```
 
-# Gene Set Testing
+# Gene Set Testing {.tabset}
 
-## GO analysis
+We perform Gene Set Testing with the `goseq` package, using the Wallenius method (default). We alternatively test different functional annotations:
+
+- GO ontologies (BP, MF, CC)
+- KEGG Pathways
+
+The **Fit the PWF** tab shows the fit of the Probability Weighting Function (PWF) given lengths of the genes under scrutiny.
 
 ```{r, eval=TRUE}
 # as in http://127.0.0.1:31865/library/goseq/doc/goseq.pdf
@@ -504,18 +509,21 @@ DE_genes$DE[is.na(DE_genes$DE)] <- 0
 
 DEgenes <- DE_genes$DE
 names(DEgenes) <- DE_genes$gene
-
-# read GO terms
-genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go", header=FALSE, sep="\t")
 ```
 
-Fit the PWF
+## Fit the PWF
 
 ```{r, eval=TRUE}
 pwf <- nullp(DEgenes = DEgenes, bias.data = DE_genes$length)
 ```
 
+## GO analysis {.tabset}
+
 ```{r, eval=TRUE}
+# read GO terms
+genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go", header=FALSE, sep="\t")
+
+# run go2seq
 GO.wall <- goseq(pwf, gene2cat = genes_GO)
 ```
 
@@ -535,7 +543,11 @@ enriched.GO.wall %>%
   saveWidgetFix(file="SLUBI_analyses/export/goseq_GO_results.html", title="TE Biogas: goseq analysis with GO categories")
 ```
 
-Analysis is performed with the Wallenius method (default for goseq). Following, three plots of top 50 over-represented GO terms (by adjusted p-value) for each GO ontology (BP = Biological Process, MF = Molecular Function, CC = Cellular Component).
+Following, three plots of top 50 over-represented GO terms (by adjusted p-value) for each GO ontology (BP = Biological Process, MF = Molecular Function, CC = Cellular Component).
+
+An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
+
+### GO analysis: Biological Process terms
 
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
 enriched.GO.wall %>% 
@@ -550,6 +562,8 @@ enriched.GO.wall %>%
     labs(size="Count", colour="adj P value")
 ```
 
+### GO analysis: Molecular Function terms
+
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
 enriched.GO.wall %>% 
   filter(ontology=="MF") %>%
@@ -562,6 +576,8 @@ enriched.GO.wall %>%
     ylab("Category") +
     labs(size="Count", colour="adj P value")
 ```
+
+### GO analysis: Cellular Component terms
 
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
 enriched.GO.wall %>% 
@@ -576,19 +592,20 @@ enriched.GO.wall %>%
     labs(size="Count", colour="adj P value")
 ```
 
-An interactive, detailed report of the goseq analysis with GO terms is available [here](./export/goseq_GO_results.html).
+## KEGG Pathway analysis
 
-## KO analysis
-
-```{r}
-# read GO terms
-genes_KO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.ko.pathways", header=FALSE, sep="\t")
+```{r, eval=TRUE, fig.width=10, fig.height=10}
+# read KO terms
+genes_KO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.ko.pathways",
+                       header=FALSE,
+                       sep="\t",
+                       colClasses = c("character", "character"))
 genes_KO <- data.frame(base::lapply(genes_KO, function(x) {
     gsub("ko:", "", x)
 }))
 
 # run goseq by testing KEGG
-KO.wall <- goseq(pwf, gene2cat = genes_KO, test.cats=c("KEGG"))
+KO.wall <- goseq(pwf, gene2cat = genes_KO, test.cats="KEGG")
 
 enriched.KO.wall <- KO.wall %>%
                       mutate(over_represented_pvalue_padjust = p.adjust(over_represented_pvalue, method="BH")) %>%
@@ -603,6 +620,16 @@ enriched.KO.wall %>%
   )
 )) %>%
   saveWidgetFix(file="SLUBI_analyses/export/goseq_KO_results.html", title="TE Biogas: goseq analysis with KO categories")
+
+enriched.KO.wall %>%
+  head(50) %>%
+  #mutate(ylabels = paste(term, category, sep = "_")) %>%
+  ggplot(aes(x=numDEInCat/numInCat*100, y=category)) + # plot with ggplot!
+    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in KEGG Pathways") +
+    xlab("% DE in category") +
+    ylab("Category") +
+    labs(size="Count", colour="adj P value")
 ```
 
 # Supporting files
