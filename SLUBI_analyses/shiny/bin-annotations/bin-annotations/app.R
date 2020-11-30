@@ -8,6 +8,7 @@
 #
 
 library(shiny)
+library(shinydashboard)
 library(DT)
 library(tidyverse)
 
@@ -41,18 +42,38 @@ bins_from_annotations <- gene.go_ko %>%
 
 gene.go_ko <- dplyr::bind_cols(bins_from_annotations, gene.go_ko)
 
+instructions <- "BWE"
+
 # Define UI for application that shoots this table
 ui <- fluidPage(
 
     # Application title
-    titlePanel("TE Biogas: bin annotations"),
-    tags$img(src = "SLUBI_logo_smaller.png", align="right"),
-
+    #titlePanel("TE Biogas: bin annotations"),
+    # tags$img(src = "SLUBI_logo_smaller.png", align="right"),
+    
+    fluidRow(
+        column(4,
+               checkboxGroupInput("show_vars", "Columns/annotations to show:",
+                                  names(gene.go_ko), selected = names(gene.go_ko))),
+       column(7, 
+              includeMarkdown("data/description.md")
+       )
+        
+        # box(title = "",
+        #     status = "primary",
+        #     p = "BWE",
+        #     solidHeader = F,
+        #     collapsible = F,
+        #     width = 12)
+            # fluidRow(column(width = 10, box(p=instructions)),
+            #          column(width = 2, align = "center",
+            #                 img(src="SLUBI_logo_smaller.png", width=100))))
+    # ),
     # Sidebar with checkboxes for displaying columns 
-    sidebarLayout(
-        sidebarPanel(
-            checkboxGroupInput("show_vars", "Columns/annotations to show:",
-                               names(gene.go_ko), selected = names(gene.go_ko))
+    # sidebarLayout(
+    #     sidebarPanel(
+    #         checkboxGroupInput("show_vars", "Columns/annotations to show:",
+    #                            names(gene.go_ko), selected = names(gene.go_ko))
             # sliderInput("bins",
             #             "Number of bins:",
             #             min = 1,
@@ -62,7 +83,7 @@ ui <- fluidPage(
 
         DT::dataTableOutput("gene.go_ko.table")
     )
-)
+# )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {

@@ -1,7 +1,7 @@
 ---
 title: "TE Biogas: metatranscriptome analyses"
 author: "Domenico Simone"
-date: "July 13th, 2020"
+date: "November 29th, 2020"
 output:
   html_document:
     toc: true
@@ -25,6 +25,7 @@ library(pheatmap)
 library(RColorBrewer)
 library(DT)
 library(goseq)
+library(scatterpie)
 ```
 
 ```{r, eval=TRUE, echo=FALSE}
@@ -485,15 +486,8 @@ subset(res, padj < 0.05) %>%
 
 # Gene Set Testing {.tabset}
 
-We perform Gene Set Testing with the `goseq` package, using the Wallenius method (default). We alternatively test different functional annotations:
-
-- GO ontologies (BP, MF, CC)
-- KEGG Pathways
-
-The **Fit the PWF** tab shows the fit of the Probability Weighting Function (PWF) given lengths of the genes under scrutiny.
-
 ```{r, eval=TRUE}
-# as in http://127.0.0.1:31865/library/goseq/doc/goseq.pdf
+### create auxiliary tables
 
 # create table with
 # - gene names
@@ -509,22 +503,73 @@ DE_genes$DE[is.na(DE_genes$DE)] <- 0
 
 DEgenes <- DE_genes$DE
 names(DEgenes) <- DE_genes$gene
+
+# do the same, but only for over-expressed genes
+## test
+# toy <- res %>% as.data.frame %>% filter(log2FoldChange > 2) %>% head()
+# data.frame(gene=rownames(toy),
+#            DE=as.integer(toy$padj <= 0.05 & toy$log2FoldChange > 2))
+
+DE_genes_over <- data.frame(gene=rownames(res),
+                       DE_over=as.integer(res$padj <= 0.05 & res$log2FoldChange > 0)) %>%
+            tidyr::separate(gene, into = c("AS", "TE", "serial"), sep = "_") %>%
+            tidyr::unite(gene, AS, TE, serial, sep = "_") %>%
+            inner_join(read.table("SLUBI_analyses/gene_enrichment/all.proteins.lengths", header=TRUE, sep = "\t"))
+
+DE_genes_over$DE_over[is.na(DE_genes_over$DE_over)] <- 0
+
+DE_genes_under <- data.frame(gene=rownames(res),
+                       DE_under=as.integer(res$padj <= 0.05 & res$log2FoldChange < 0)) %>%
+            tidyr::separate(gene, into = c("AS", "TE", "serial"), sep = "_") %>%
+            tidyr::unite(gene, AS, TE, serial, sep = "_") %>%
+            inner_join(read.table("SLUBI_analyses/gene_enrichment/all.proteins.lengths", header=TRUE, sep = "\t"))
+
+DE_genes_under$DE_under[is.na(DE_genes_under$DE_under)] <- 0
+
+# DEgenes_over <- DE_genes_over$DE
+# names(DEgenes_over) <- DE_genes_over$gene
+
+# read GO terms
+genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go", header=FALSE, sep="\t")
+
+# create table with tally of over- and under-expressed genes for each GO
+GO_DE_counts <- genes_GO %>%
+                  left_join(DE_genes_over,  by = c(V1 = "gene")) %>%
+                  left_join(DE_genes_under, by = c(V1 = "gene")) %>%
+                  dplyr::filter(DE_over==1 | DE_under==1) %>%
+                  dplyr::select(V2, DE_over, DE_under) %>%
+                  dplyr::group_by(V2) %>%
+                  dplyr::summarise_each(funs(sum)) %>% ungroup()
+
+names(GO_DE_counts) <- c("category", "over-expressed", "under-expressed")
 ```
 
-## Fit the PWF
+<details>
+  <summary>Details about the gene set testing analysis...</summary>
+We perform Gene Set Testing with the `goseq` package, using the Wallenius method (default). We then apply **multiple hypothesis testing correction** using a .05 FDR cutoff [Benjamini and Hochberg, 1995].
+
+**Fit the PWF**
+
+This plot shows the fit of the Probability Weighting Function (PWF) given lengths of the genes under scrutiny.
 
 ```{r, eval=TRUE}
 pwf <- nullp(DEgenes = DEgenes, bias.data = DE_genes$length)
+# pwf.over <- nullp(DEgenes = DEgenes_over, bias.data = DE_genes_over$length)
 ```
+
+</details>
+
+We alternatively test different functional annotations:
+
+- GO ontologies (BP, MF, CC)
+- KEGG Pathways
 
 ## GO analysis {.tabset}
 
 ```{r, eval=TRUE}
-# read GO terms
-genes_GO <- read.table("SLUBI_analyses/gene_enrichment/all.proteins.emapper.go", header=FALSE, sep="\t")
-
 # run go2seq
 GO.wall <- goseq(pwf, gene2cat = genes_GO)
+# GO.wall.over <- goseq(pwf.over, gene2cat = genes_GO)
 ```
 
 ```{r, eval=TRUE}
@@ -541,6 +586,13 @@ enriched.GO.wall %>%
   )
 )) %>%
   saveWidgetFix(file="SLUBI_analyses/export/goseq_GO_results.html", title="TE Biogas: goseq analysis with GO categories")
+
+###
+
+# enriched.GO.wall.over <- GO.wall.over %>%
+#                       mutate(over_represented_pvalue_padjust = p.adjust(over_represented_pvalue, method="BH")) %>%
+#                       mutate(under_represented_pvalue_padjust = p.adjust(under_represented_pvalue, method="BH")) %>%
+#                       dplyr::filter(over_represented_pvalue_padjust < .05)
 ```
 
 Following, three plots of top 50 over-represented GO terms (by adjusted p-value) for each GO ontology (BP = Biological Process, MF = Molecular Function, CC = Cellular Component).
@@ -550,46 +602,152 @@ An interactive, detailed report of the goseq analysis with GO terms is available
 ### GO analysis: Biological Process terms
 
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
+# enriched.GO.wall %>% 
+#   filter(ontology=="BP") %>%
+#   head(50) %>%
+#   mutate(ylabels = paste(term, category, sep = "_")) %>%
+#   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
+#     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+#     ggtitle("Top over-represented categories in BP") +
+#     xlab("% DE in category") +
+#     ylab("Category") +
+#     labs(size="Count", colour="adj P value")
+
+# enriched.GO.wall %>% 
+#   filter(ontology=="BP") %>%
+#   head(50) %>%
+#   mutate(ylabels = paste(term, category, sep = "_")) %>%
+#   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
+#     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+#     ggtitle("Top over-represented categories in BP") +
+#     xlab("% DE in category") +
+#     ylab("Category") +
+#     labs(size="Count", colour="adj P value")
+
 enriched.GO.wall %>% 
   filter(ontology=="BP") %>%
   head(50) %>%
+  left_join(GO_DE_counts) %>%
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  mutate(prop_DEInCat = numDEInCat/numInCat*100) %>%
+  bind_cols(serial=as.integer(rownames(.))) %>%
+  # filter(ontology=="BP") %>%
+  head(50) %>%
   mutate(ylabels = paste(term, category, sep = "_")) %>%
   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
-    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+    geom_point(aes(colour=`over-expressed`/numDEInCat, size=numDEInCat)) +
     ggtitle("Top over-represented categories in BP") +
     xlab("% DE in category") +
     ylab("Category") +
-    labs(size="Count", colour="adj P value")
+    labs(size="Count", colour="over-expressed ratio")
 ```
 
 ### GO analysis: Molecular Function terms
 
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
+# enriched.GO.wall %>% 
+#   filter(ontology=="MF") %>%
+#   head(50) %>%
+#   mutate(ylabels = paste(term, category, sep = "_")) %>%
+#   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
+#     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+#     ggtitle("Top over-represented categories in MF") +
+#     xlab("% DE in category") +
+#     ylab("Category") +
+#     labs(size="Count", colour="adj P value")
+
 enriched.GO.wall %>% 
   filter(ontology=="MF") %>%
   head(50) %>%
+  left_join(GO_DE_counts) %>%
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  mutate(prop_DEInCat = numDEInCat/numInCat*100) %>%
+  bind_cols(serial=as.integer(rownames(.))) %>%
+  # filter(ontology=="BP") %>%
+  head(50) %>%
   mutate(ylabels = paste(term, category, sep = "_")) %>%
   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
-    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
-    ggtitle("Top over-represented categories in MF") +
+    geom_point(aes(colour=`over-expressed`/numDEInCat, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in BP") +
     xlab("% DE in category") +
     ylab("Category") +
-    labs(size="Count", colour="adj P value")
+    labs(size="Count", colour="over-expressed ratio")
 ```
 
 ### GO analysis: Cellular Component terms
 
 ```{r, eval=TRUE, fig.width=10, fig.height=10}
+# enriched.GO.wall %>% 
+#   filter(ontology=="CC") %>%
+#   head(50) %>%
+#   mutate(ylabels = paste(term, category, sep = "_")) %>%
+#   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
+#     geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
+#     ggtitle("Top over-represented categories in CC") +
+#     xlab("% DE in category") +
+#     ylab("Category") +
+#     labs(size="Count", colour="adj P value")
+
 enriched.GO.wall %>% 
   filter(ontology=="CC") %>%
   head(50) %>%
+  left_join(GO_DE_counts) %>%
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  mutate(prop_DEInCat = numDEInCat/numInCat*100) %>%
+  bind_cols(serial=as.integer(rownames(.))) %>%
+  # filter(ontology=="BP") %>%
+  head(50) %>%
   mutate(ylabels = paste(term, category, sep = "_")) %>%
   ggplot(aes(x=numDEInCat/numInCat*100, y=ylabels)) + # plot with ggplot!
-    geom_point(aes(colour=over_represented_pvalue_padjust, size=numDEInCat)) +
-    ggtitle("Top over-represented categories in CC") +
+    geom_point(aes(colour=`over-expressed`/numDEInCat, size=numDEInCat)) +
+    ggtitle("Top over-represented categories in BP") +
     xlab("% DE in category") +
     ylab("Category") +
-    labs(size="Count", colour="adj P value")
+    labs(size="Count", colour="over-expressed ratio")
+```
+
+```{r, eval=FALSE, fig.width=10, fig.height=15}
+getRadius <- function(x, rmin = 0.5, rmax = 1.2) {
+  ratio <- (rmax - rmin) / (max(x) - min(x))
+
+  r <- (x - min(x)) * ratio + rmin
+  return (r)
+}
+
+GO_DE_counts <- genes_GO %>%
+                  left_join(DE_genes_over,  by = c(V1 = "gene")) %>%
+                  left_join(DE_genes_under, by = c(V1 = "gene")) %>%
+                  dplyr::filter(DE_over==1 | DE_under==1) %>%
+                  dplyr::select(V2, DE_over, DE_under) %>%
+                  dplyr::group_by(V2) %>%
+                  dplyr::summarise_each(funs(sum)) %>% ungroup()
+
+names(GO_DE_counts) <- c("category", "over-expressed", "under-expressed")
+
+
+d <- enriched.GO.wall %>% 
+  filter(ontology=="BP") %>%
+  head(50) %>%
+  left_join(GO_DE_counts) %>%
+  mutate(ylabels = paste(term, category, sep = "_")) %>%
+  mutate(prop_DEInCat = numDEInCat/numInCat*100) %>%
+  bind_cols(serial=as.integer(rownames(.)))
+
+d$radius <- getRadius(d$numDEInCat)
+
+  
+y_labels = d$ylabels
+ggplot(d, aes(x=prop_DEInCat)) + geom_scatterpie(
+                                    aes(x=prop_DEInCat, y=serial, r=radius),
+                                    data = d,
+                                    cols = c("over-expressed", "under-expressed")#,
+                                    #pie_scale = 0.8
+                                  ) +
+                                  ggtitle("Top over-represented categories in BP") +
+                                  xlab("% DE in category") +
+                                  ylab("Category") +
+                                  labs(size="Count", colour="adj P value") +
+                                  scale_y_discrete(labels=y_labels, limits = 1:50)
 ```
 
 ## KEGG Pathway analysis
